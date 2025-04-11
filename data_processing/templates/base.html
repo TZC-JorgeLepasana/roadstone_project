@@ -1,0 +1,261 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Roadstone - Ireland Asphalt Plant Data Management</title>
+    
+    
+    <!-- AdminLTE & Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    
+    <!-- Google Font: Archivo Narrow -->
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'lib/toastify.min.css' %}">
+    
+    <!-- Loading.io CSS Spinner -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/loadingio-spinners@1.0.0/dist/ldio.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.dataTables.min.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    
+
+
+        
+    <!-- Spinner Styles -->
+    <style>
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .loading-text {
+        margin-top: 15px;
+        font-family: 'Archivo Narrow', sans-serif;
+        color: #3c8dbc;
+    }
+    </style>
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+    <!-- Add this right after opening <body> -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <img src="{% static 'img/loading-spinner.gif' %}" alt="Loading..." width="80" height="80">
+        <div class="loading-text">Processing data...</div>
+    </div>
+
+    <div class="wrapper" style="max-width: 100%; overflow-x: hidden;">
+        <!-- Navbar -->
+        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+            <!-- Left navbar links -->
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="pushmenu" href="#" role="button">
+                        <i class="fas fa-bars"></i>
+                    </a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="{% url 'home' %}" class="nav-link">Home</a>
+                </li>
+            </ul>
+
+            <!-- Centered Title -->
+            <div class="navbar-title-center mx-auto text-center">
+                <span class="navbar-text font-weight-bold">
+                    Asphalt Plant Data Management
+                </span>
+            </div>
+
+            <!-- Username -->
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-username">
+                    <span class="nav-link">{{ request.user.username }}</span>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Sidebar Container -->
+        <aside class="main-sidebar sidebar-dark-primary elevation-4 just-sidebar">
+        <a href="{% url 'home' %}" class="brand-link d-flex align-items-center justify-content-center flex-column">
+            <span class="brand-text">Roadstone Ireland</span>
+        </a>
+
+        <!-- Sidebar -->
+        <div class="sidebar" style="background: linear-gradient(180deg, #111010d2, #001617, #000000e4);">
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" role="menu">
+                    <!-- Dashboard Link -->
+
+                    <div style="border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 10px; text-align: left;">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #ede7ee, #333); color: black; font-weight: bold; border-radius: 50%; width: 40px; height: 40px; font-size: 1rem; background-color: white;">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <span style="color: white; font-weight: bold; font-stretch: expanded; margin-left: 10px;">{{ request.user.username }}</span>
+                    </div>
+
+                    <li class="nav-header">DASHBOARD</li>
+            
+                    <li class="nav-item">
+                        <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                            <i class="nav-icon fas fa-home"></i>  <!-- Home icon -->
+                            <p>Home</p>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a href="{% url 'oee' %}" class="nav-link {% if request.resolver_match.url_name == 'oee' %}active{% endif %}">
+                            <i class="nav-icon fas fa-cogs"></i>  <!-- OEE icon (gears represent equipment efficiency) -->
+                            <p>OEE</p>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a href="{% url 'production' %}" class="nav-link {% if request.resolver_match.url_name == 'production' %}active{% endif %}">
+                            <i class="nav-icon fas fa-chart-bar"></i>  <!-- Production icon (bar chart for production metrics) -->
+                            <p>Production</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-header">DATA MANAGEMENT</li>
+                    <!-- Import Data Section -->
+                    <li class="nav-item">
+                        <a href="{% url 'upload_xml' %}" class="nav-link {% if request.resolver_match.url_name == 'upload_xml' %}active{% endif %}">
+                            <i class="nav-icon fas fa-file-import"></i>
+                            <p>Import Data</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{% url 'energy_fetch' %}" class="nav-link {% if request.resolver_match.url_name == 'energy_fetch' %}active{% endif %}">
+                            <i class="nav-icon fas fa-bolt"></i>
+                            <p>Fetch Energy Data</p>
+                        </a>
+                    </li>
+
+                    <!-- Processed Files Log -->
+                    <li class="nav-item">
+                        <a href="{% url 'processed_files_log' %}" class="nav-link {% if request.resolver_match.url_name == 'processed_files_log' %}active{% endif %}">
+                            <i class="nav-icon fas fa-file-alt"></i>
+                            <p>Processed Files Log</p>
+                        </a>
+                    </li>
+
+                    <!-- Database Section -->
+                    <li class="nav-item">
+                        <a href="{% url 'batchlog_list' %}" class="nav-link {% if request.resolver_match.url_name == 'batchlog_list' %}active{% endif %}">
+                            <i class="nav-icon fas fa-database"></i>
+                            <p>Database</p>
+                        </a>
+                    </li>
+
+
+                    <li class="nav-header">SYSTEM</li>
+                    <!-- Logout Link -->
+                    <li class="nav-item">
+                        <a href="{% url 'logout' %}" class="nav-link">
+                            <i class="nav-icon fas fa-sign-out-alt"></i>
+                            <p>Log Out</p>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+        <!-- Content Wrapper -->
+        <div class="content-wrapper">
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- Footer -->
+        <footer class="main-footer text-center">
+            <div class="container">
+                <p class="mb-0">© 2025 Towards Zero Carbon</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+   
+
+    
+    <script src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script>
+
+    <!-- DataTables Scripts -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <script src="{% static 'lib/toastify.min.js' %}"></script>
+
+    <!-- Add this script before closing </body> -->
+    <script>
+    // Show/hide functions
+    function showLoading() {
+        document.getElementById('loading-overlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loading-overlay').style.display = 'none';
+    }
+
+    // Automatic handling
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show during page load
+        showLoading();
+        
+        // Hide when everything is loaded
+        window.addEventListener('load', hideLoading);
+        
+        // Handle AJAX requests
+        $(document).ajaxStart(function() {
+            showLoading();
+        }).ajaxStop(function() {
+            hideLoading();
+        });
+    });
+
+    // For specific button clicks
+    document.querySelectorAll('[data-loading]').forEach(button => {
+        button.addEventListener('click', showLoading);
+    });
+    
+    </script>
+
+    <!-- Custom Scripts -->
+    <script src="{% static 'js/scripts.js' %}"></script>    
+</body>
+</html>

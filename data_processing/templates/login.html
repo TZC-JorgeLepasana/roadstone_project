@@ -1,0 +1,166 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign In – Roadstone Galway</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .bg-wrapper {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url("{% static 'img/bg_1.png' %}") no-repeat center center;
+      background-size: cover;
+      z-index: -2;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.059);
+      padding: 30px;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+    }
+
+    
+
+    .btn-custom {
+      background: linear-gradient(90deg, #040121 , #024246, #032625);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-custom:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 8px rgba(213, 223, 162, 0.9);
+      color: antiquewhite;
+    }
+
+    label {
+      color: white;
+    }
+
+    .form-control {
+      background-color: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+    }
+
+    .form-control::placeholder {
+      color: #e0e0e0;
+    }
+
+    .input-group-text {
+      background-color: rgba(0, 0, 0, 0.2);
+      color: white;
+      border: none;
+    }
+
+    h3.card-title {
+      color: white;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+
+    /* Footer Styling */
+    .main-footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.2);
+      font-size: 14px;
+      padding: 10px 0;
+      z-index: 10;
+    }
+
+    .main-footer p {
+      margin-bottom: 0;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Background Layers -->
+  <div class="bg-wrapper"></div>
+  <div class="overlay"></div>
+
+  <!-- Login Form -->
+  <div class="container d-flex align-items-center justify-content-center min-vh-100">
+    <div class="row justify-content-center w-100">
+      <div class="col-md-6 col-lg-4">
+        <div class="card glass-card">
+          <div class="card-body">
+            <h3 class="card-title text-center mb-4" style="font-size: 1.3rem; font-weight: bold;">ROADSTONE GALWAY</h3>
+
+            <form method="post">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-user"></i></span>
+                  <input type="text" name="username" id="username" class="form-control" placeholder="Enter your username" required>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                  <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
+                </div>
+              </div>
+
+              <div class="d-grid">
+                <button type="submit" class="btn btn-custom btn-block">Login</button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="main-footer text-center">
+    <div class="container">
+      <p class="mb-0">© 2025 Towards Zero Carbon</p>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

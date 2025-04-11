@@ -1,0 +1,5 @@
+
+.field-week_days,
+.field-day_of_month {
+    transition: all 0.3s ease;
+}

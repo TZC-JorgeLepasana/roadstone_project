@@ -1,0 +1,670 @@
+/* ==================== */
+/* BASE STYLES */
+/* ==================== */
+body {
+    font-family: 'Archivo Narrow', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+/* ==================== */
+/* LAYOUT STRUCTURE */
+/* ==================== */
+.wrapper {
+    max-width: 100%;
+    overflow-x: hidden;
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+.content-wrapper {
+    padding: 20px;
+    flex: 1;
+    margin-top: 50px;
+    background-color: #ffffff;
+}
+
+/* ==================== */
+/* NAVBAR STYLES */
+/* ==================== */
+.main-header {
+    background: #ffffff;
+    height: 50px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%; /* Full width */
+    z-index: 1030;
+    font-family: 'Archivo Narrow', sans-serif;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: center;
+}
+
+.main-header-container {
+    width: 82%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+/* Frozen State - Activated via JavaScript on scroll */
+.main-header.frozen {
+    background-color: rgba(245, 245, 245, 0.92) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+@keyframes smoothFreeze {
+    0% { background-color: rgba(255,255,255,1); }
+    100% { background-color: rgba(245, 245, 245, 0.92); }
+}
+
+/* Centered title */
+.navbar-title-center {
+    position: absolute;
+    left: 40%;
+    transform: translateX(-50%);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    max-width: 50%;
+    text-align: center;
+}
+
+.navbar-title-center span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: clamp(14px, 3vw, 18px);
+}
+
+/* ==================== */
+/* SIDEBAR STYLES - CURVED DESIGN */
+/* ==================== */
+.main-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 250px;
+    z-index: 1050;
+    background: linear-gradient(to bottom, black, gray);
+    box-shadow: none;
+}
+
+.just-sidebar {
+    overflow: hidden;
+}
+
+.brand-link {
+    padding: 1.5rem 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    height: 50px;
+}
+
+.brand-text {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+.sidebar {
+    padding: 0 1rem;
+}
+
+.nav-sidebar .nav-item {
+    position: relative;
+    margin: 5px 0;
+    
+}
+
+.nav-sidebar .nav-link {
+    color: #fefbfb;
+    border-top-left-radius: 15px;
+    border-bottom-left-radius: 15px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    padding: 12px 15px;
+    margin: 2px 0;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: none; /* Removed shadow on the right */
+}
+
+.nav-sidebar .nav-link:hover {
+    background-color: #fefbfb !important;
+    color: black !important;
+}
+
+.nav-sidebar .nav-link.active {
+    background-color: #fefbfb !important;
+    color: black !important;
+}
+
+.nav-sidebar .nav-link.active::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: -20px;
+    width: 40px;
+    height: 40px;
+    background-color: #fefbfb;
+    z-index: -1;
+}
+
+.nav-sidebar .nav-link.active::after {
+    content: '';
+    position: absolute;
+    right: -20px;
+    bottom: -20px;
+    width: 40px;
+    height: 40px;
+    background-color: #fefbfb;
+    z-index: -1;
+    box-shadow: none; /* Removed shadow */
+}
+
+.nav-sidebar .nav-icon {
+    margin-right: 10px;
+    font-size: 1.1rem;
+}
+/* ==================== */
+/* FOOTER STYLES */
+/* ==================== */
+.main-footer {
+    padding: 1rem;
+    background-color: #f4f6f9;
+    border-top: 1px solid #dee2e6;
+    text-align: center;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: clamp(12px, 1.5vw, 16px); /* Responsive font size */
+}
+
+@media (max-width: 768px) {
+    .main-footer {
+        padding: 0.75rem;
+        font-size: clamp(10px, 2vw, 14px); /* Adjust font size for smaller screens */
+    }
+}
+
+/* ==================== */
+/* ANIMATIONS */
+/* ==================== */
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ==================== */
+/* MOBILE RESPONSIVENESS */
+/* ==================== */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    /* Mobile sidebar adjustments */
+    .main-sidebar {
+        height: calc(100vh - 50px);
+        top: 50px;
+    }
+    
+    .nav-sidebar .nav-item > a {
+        padding: 0.8rem 1rem;
+    }
+    
+    .nav-sidebar .nav-treeview .nav-link {
+        padding-left: 1.5rem;
+    }
+}
+
+/* ================================================================================================== */
+
+/* ==================== */
+/* DASHBOARD BASE STYLES */
+/* ==================== */
+
+
+/* ==================== */
+/* CARD STYLES */
+/* ==================== */
+
+.card-title {
+    padding: 10px;
+    text-align: center;
+    font-family: 'Archivo Narrow', sans-serif;
+    font-weight: bold;
+}
+
+/* ==================== */
+/* WIDGET CARD STYLES */
+/* ==================== */
+.widget-card {
+    height: 75px;
+    border-radius: 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.widget-body {
+    padding: 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
+
+.widget-title {
+    font-family: 'Archivo Narrow', sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 5px;
+}
+
+.widget-text {
+    font-family: 'Archivo Narrow', sans-serif;
+    font-size: 12px;
+    color: white;
+    margin: 0;
+}
+
+/* Widget Color Variations */
+.widget-blue {
+    background-color: #003366;
+}
+
+.widget-green {
+    background-color: #004d00;
+}
+
+.widget-yellow {
+    background-color: #806000;
+}
+
+.widget-red {
+    background-color: #660000;
+}
+
+/* Hover Effects */
+.widget-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ==================== */
+/* NOTIFICATION STYLES */
+/* ==================== */
+#welcomeAlert {
+    position: fixed;
+    top: 55px;
+    left: 80%;
+    z-index: 1000;
+    font-family: 'Archivo Narrow', sans-serif;
+    font-size: 16px;
+    display: none;
+    background: linear-gradient(45deg, #05707c, #800080);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 15px 20px;
+    max-width: 300px;
+}
+
+/* ==================== */
+/* ANIMATIONS */
+/* ==================== */
+.animate__fadeInLeft {
+    animation: fadeInLeft 0.5s ease-in-out;
+}
+
+.animate__fadeOutLeft {
+    animation: fadeOutLeft 0.5s ease-in-out;
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeOutLeft {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+}
+
+/* ==================== */
+/* TEXT STYLES */
+/* ==================== */
+.text-white {
+    font-family: 'Archivo Narrow', sans-serif;
+    font-size: 12px;
+}
+
+
+/* ================================================================================================== */
+
+/* ====================== */
+/* UPLOAD XML */
+/* ====================== */
+/* Add these styles to your existing CSS */
+.processed-files-scrollable {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#processedFilesList {
+    max-height: 400px;
+    overflow-y: auto;
+    list-style-type: none;
+    padding-left: 0;
+}
+
+#processedFilesList li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+#processedFilesList li:last-child {
+    border-bottom: none;
+}
+
+.badge {
+    margin-right: 8px;
+    font-size: 0.85em;
+    padding: 0.35em 0.65em;
+    font-weight: 500;
+}
+
+.processed-files-container {
+    position: relative;
+}
+
+#upload-card {
+    border-radius: 0;
+    box-shadow: none;
+    height: 80vh;
+}
+
+#upload-card-body {
+    height: 100%;
+}
+
+.w-50 {
+    height: 100%;
+}
+
+.border-end {
+    border-right: 1px solid #dee2e6;
+}
+
+
+/* ====================== */
+/* BUTTON STYLES */
+/* ====================== */
+
+.btn-sm {
+    padding: 3px 6px;
+    font-size: 12px;
+    border-radius: 5px;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border: none;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border: none;
+}
+
+/* For the container holding the processed files list */
+.processed-files-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Contains the scrolling element */
+}
+
+/* For the list itself */
+#processedFilesList {
+    overflow-y: auto; /* Enables vertical scrolling */
+    max-height: calc(100% - 120px); /* Adjust based on your header/legend height */
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    flex-grow: 1; /* Takes remaining space */
+    font-size: 12px;
+}
+
+/* List items styling */
+#processedFilesList li {
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Custom scrollbar styling */
+#processedFilesList::-webkit-scrollbar {
+    width: 8px;
+}
+
+#processedFilesList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#processedFilesList::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#processedFilesList::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+
+
+/* ================================================================================================== */
+
+/* ====================== */
+/* GENERAL STYLES */
+/* ====================== */
+
+.container-fluid {
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+
+
+.d-inline-block {
+    display: inline-block !important;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* ====================== */
+/* CARD STYLING */
+/* ====================== */
+.card {
+    border-radius: 0.25rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+/* ====================== */
+/* BREADCRUMB STYLING */
+/* ====================== */
+.breadcrumb {
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    background-color: #e9ecef00;
+    border-radius: 0.25rem;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: ">";
+    padding: 0 0.5rem;
+}
+
+/* ====================== */
+/* TABLE STYLING */
+/* ====================== */
+
+
+/* PROCESSED FILES LOG TABLE*/
+#table-body td {
+    white-space: nowrap;
+    font-size: 12px;
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Table row hover effect */
+#processedFilesTable tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Sticky column styling */
+.sticky-column {
+    position: sticky;
+    left: 0;
+    background-color: white;
+    z-index: 1;
+}
+
+
+.table-bordered {
+    border: 1px solid #e6dede;
+}
+
+.table-bordered th,
+.table-bordered td {
+    border: 1px solid #e6dede;
+}
+
+.table-header th {
+    position: relative;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    top: 0;
+    background: #202121;
+    color: white;
+    font-size: 13px;
+    padding: 5px 2px;
+    height: 5px;
+    border-bottom: 3px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* Table Container */
+.table-responsive {
+    max-height: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    position: relative;
+}
+
+
+
+/* ====================== */
+/* PAGINATION STYLING */
+/* ====================== */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.5em 1em;
+    margin: 0 2px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #333;
+    background-color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background-color: #e9ecef;
+    border-color: #ddd;
+    color: #333;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+    color: #6c757d;
+    background-color: #fff;
+    border-color: #ddd;
+    cursor: not-allowed;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button i {
+    font-size: 14px;
+}

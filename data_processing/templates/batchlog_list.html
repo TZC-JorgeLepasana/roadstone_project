@@ -1,0 +1,469 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Raw Data{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-1 animated-content" style="min-height: calc(100vh - 150px);">
+    
+    <div class="row mb-2">
+        <div class="col-md-6 fw-bold text-black-50">
+            <h5>Raw Data</h5>
+        </div>
+        <div class="col-md-6 text-end">
+            <nav aria-label="breadcrumb" class="d-inline-block">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Raw Data</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="filterToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Filter Applied</strong>
+                <small>Just now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastBody">
+                Filters have been applied successfully.
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row row-cols-lg-4 row-cols-md-2 row-cols-1 g-3 align-items-end">
+                <!-- Date From -->
+                <div class="col">
+                    <label for="fromDate" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="fromDate">
+                </div>
+                
+                <!-- Date To -->
+                <div class="col">
+                    <label for="toDate" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="toDate">
+                </div>
+                
+                <!-- Recipe Filter -->
+                <div class="col">
+                    <label for="recipeFilter" class="form-label">Recipe Name</label>
+                    <select class="form-select" id="recipeFilter">
+                        <option value="">All Recipes</option>
+                    </select>
+                </div>
+                
+                <!-- Buttons -->
+                <div class="col d-flex gap-2">
+                    <button id="applyFilter" class="btn btn-primary flex-grow-1">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                    <button id="exportCSV" class="btn btn-success flex-grow-1">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Table Container -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="batchTable" class="table table-hover table-bordered text-center compact nowrap" style="width:100%">
+                    <thead class="table-header">
+                        <tr>
+                            <th>No.</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Batch No</th>
+                            <th>Job No</th>
+                            <th>Recipe No</th>
+                            <th>Recipe Name</th>
+                            <th>Bitumen Actual</th>
+                            <th>Filler Actual</th>
+                            <th>Reclaim Actual</th>
+                            <th>Temperature Actual</th>
+                            <th>HotBin 1 Actual</th>
+                            <th>HotBin 2 Actual</th>
+                            <th>HotBin 3 Actual</th>
+                            <th>HotBin 4 Actual</th>
+                            <th>HotBin 5 Actual</th>
+                            <th>HotBin 6 Actual</th>
+                            <th>HotBin 7 Actual</th>
+                            <th>HotBin 8 Actual</th>
+                            <th>Bitumen Target</th>
+                            <th>Filler Target</th>
+                            <th>Reclaim Target</th>
+                            <th>Temperature Target</th>
+                            <th>HotBin 1 Target</th>
+                            <th>HotBin 2 Target</th>
+                            <th>HotBin 3 Target</th>
+                            <th>HotBin 4 Target</th>
+                            <th>HotBin 5 Target</th>
+                            <th>HotBin 6 Target</th>
+                            <th>HotBin 7 Target</th>
+                            <th>HotBin 8 Target</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be loaded via AJAX -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/datetime/1.4.1/css/dataTables.dateTime.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.dataTables.min.css">
+
+<!-- jQuery and DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+<script src="https://cdn.datatables.net/datetime/1.4.1/js/dataTables.dateTime.min.js"></script>
+<script src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    var table = $('#batchTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: ['copy', 'csv', 'excel'],
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{% url 'raw_data_ajax' %}",
+            type: "GET",
+            data: function(d) {
+                // Add filter parameters
+                d.date_start = $('#fromDate').val();
+                d.date_end = $('#toDate').val();
+                d.recipe = $('#recipeFilter').val();
+            },
+            error: function(xhr) {
+                showToast('Error loading data: ' + xhr.responseText, 'error');
+            }
+            
+        },
+        columns: [
+            { data: "id", className: "dt-center" },
+            { data: "Date", className: "dt-center" },
+            { data: "Time", className: "dt-center" },
+            {"data": "BatchNo", "className": "dt-center"},
+            {"data": "JobNo", "className": "dt-center"},
+            {"data": "RecipeNo", "className": "dt-center"},
+            {"data": "RecipeName", "className": "dt-center"},
+            {"data": "Bitumen_Actual", "className": "dt-center"},
+            {"data": "Filler_Actual", "className": "dt-center"},
+            {"data": "Reclaim_Actual", "className": "dt-center"},
+            {"data": "Temperature_Actual", "className": "dt-center"},
+            {"data": "HotBin1_Actual", "className": "dt-center"},
+            {"data": "HotBin2_Actual", "className": "dt-center"},
+            {"data": "HotBin3_Actual", "className": "dt-center"},
+            {"data": "HotBin4_Actual", "className": "dt-center"},
+            {"data": "HotBin5_Actual", "className": "dt-center"},
+            {"data": "HotBin6_Actual", "className": "dt-center"},
+            {"data": "HotBin7_Actual", "className": "dt-center"},
+            {"data": "HotBin8_Actual", "className": "dt-center"},
+            {"data": "Bitumen_Target", "className": "dt-center"},
+            {"data": "Filler_Target", "className": "dt-center"},
+            {"data": "Reclaim_Target", "className": "dt-center"},
+            {"data": "Temperature_Target", "className": "dt-center"},
+            {"data": "HotBin1_Target", "className": "dt-center"},
+            {"data": "HotBin2_Target", "className": "dt-center"},
+            {"data": "HotBin3_Target", "className": "dt-center"},
+            {"data": "HotBin4_Target", "className": "dt-center"},
+            {"data": "HotBin5_Target", "className": "dt-center"},
+            {"data": "HotBin6_Target", "className": "dt-center"},
+            {"data": "HotBin7_Target", "className": "dt-center"},
+            {"data": "HotBin8_Target", "className": "dt-center"}
+        ],
+        scrollX: true,
+        fixedColumns: {
+            left: 3,
+            right: 0,
+            heightMatch: 'auto' // This helps with synchronization
+        },
+        scrollY: "60vh",
+        scrollCollapse: true,
+        order: [[1, 'desc']],
+        pageLength: 10,
+
+        drawCallback: function() {
+            updateFixedHeaders();
+        },
+
+        initComplete: function() {
+            setTimeout(updateFixedHeaders, 300);
+        },
+        createdRow: function(row, data, dataIndex) {
+            updateFixedHeaders();
+        }
+        // ===== END OF NEW ADDITIONS =====
+    });
+    
+    function updateFixedHeaders() {
+    // Try multiple times with increasing delays
+        let attempts = 0;
+        const maxAttempts = 5;
+        const interval = 100; // ms
+        
+        const tryUpdate = () => {
+            attempts++;
+            if ($('.DTFC_Cloned thead th').length > 0) {
+                $('.DTFC_Cloned thead th:eq(0)').text('No.').css('background-color', '#f8f9fa');
+                $('.DTFC_Cloned thead th:eq(1)').text('Date').css('background-color', '#f8f9fa');
+                $('.DTFC_Cloned thead th:eq(2)').text('Time').css('background-color', '#f8f9fa');
+            } else if (attempts < maxAttempts) {
+                setTimeout(tryUpdate, interval);
+            }
+        };
+        
+        tryUpdate();
+    }
+
+
+    
+
+    // Load recipe filter options
+    function loadRecipes() {
+        $.ajax({
+            url: "{% url 'raw_data_ajax' %}?get_recipes=true",
+            success: function(response) {
+                $('#recipeFilter').empty().append('<option value="">All Recipes</option>');
+                response.recipes.forEach(recipe => {
+                    $('#recipeFilter').append(`<option value="${recipe}">${recipe}</option>`);
+                });
+            },
+            error: function() {
+                showToast('Failed to load recipes', 'error');
+            }
+        });
+    }   
+
+    // Initialize Toast Notification
+    // Apply filters
+    function applyFilters() {
+        const fromDate = $('#fromDate').val();
+        const toDate = $('#toDate').val();
+        
+        if (fromDate && toDate && new Date(toDate) < new Date(fromDate)) {
+            showToast('End date cannot be before start date', 'error');
+            return;
+        }
+
+        $('#applyFilter').prop('disabled', true)
+                       .html('<i class="fas fa-spinner fa-spin"></i> Filtering');
+
+        table.ajax.reload(() => {
+            $('#applyFilter').prop('disabled', false)
+                           .html('<i class="fas fa-filter"></i> Apply');
+            showToast('Filters applied successfully');
+        });
+    }
+
+
+    $('#exportCSV').click(function() {
+        // Show loading state
+        const exportBtn = $(this);
+        exportBtn.html('<i class="fas fa-spinner fa-spin"></i> Exporting')
+                .prop('disabled', true);
+        
+        // Get current filters
+        const params = {
+            date_start: $('#fromDate').val(),
+            date_end: $('#toDate').val(),
+            recipe: $('#recipeFilter').val(),
+            export_csv: true  // This triggers CSV response
+        };
+        
+        // Create download URL
+        const url = "{% url 'raw_data_ajax' %}?" + $.param(params);
+        
+        // Create hidden link and trigger download
+        const link = document.createElement('a');
+        link.href = url;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Reset button after delay
+        setTimeout(() => {
+            exportBtn.html('<i class="fas fa-file-csv"></i> Export')
+                    .prop('disabled', false);
+        }, 1000);
+    });
+
+
+    // Show toast notifications
+    function showToast(message, type = 'success') {
+    const toast = new bootstrap.Toast(document.getElementById('filterToast'));
+    const toastBody = document.getElementById('toastBody');
+    
+    // Construct the message
+    let toastMessage = message;
+    if (message === 'Filters applied successfully') {
+        toastMessage = 'Filters applied: ';
+        const fromDate = $('#fromDate').val();
+        const toDate = $('#toDate').val();
+        const recipe = $('#recipeFilter').val();
+        
+        if (fromDate || toDate) {
+            toastMessage += `Date range ${fromDate || ''} to ${toDate || ''}`;
+        }
+        if (recipe) {
+            toastMessage += `${fromDate || toDate ? ' and ' : ''}Recipe: ${recipe}`;
+        }
+        toastMessage = toastMessage || 'All filters cleared';
+    }
+    
+    // Set message and styling
+    toastBody.textContent = toastMessage;
+    $('#filterToast').removeClass('bg-danger bg-success')
+                    .addClass(type === 'error' ? 'bg-danger' : 'bg-success');
+    
+    // Show the toast
+    toast.show();
+}
+
+    // Initialize
+    loadRecipes();
+    $('#applyFilter').click(applyFilters);
+    $('#fromDate, #toDate, #recipeFilter').change(applyFilters);
+    
+    // Set default dates (last 7 days)
+    const today = new Date();
+    const lastWeek = new Date(today);
+    lastWeek.setDate(today.getDate() - 7);
+    $('#fromDate').val(lastWeek.toISOString().split('T')[0]);
+    $('#toDate').val(today.toISOString().split('T')[0]);
+
+
+    
+});
+
+    
+
+</script>
+
+<style>
+
+    .DTFC_Cloned thead {
+        background-color: white !important;
+        visibility: visible !important;
+    }
+    .DTFC_Cloned thead th {
+        background-color: white !important;
+        visibility: visible !important;
+    }
+
+    
+    /* No text wrapping and consistent padding */
+    #batchTable td, #batchTable th {
+        white-space: nowrap;
+        padding: 4px 8px !important;
+    }
+    
+    /* Auto-fit columns */
+    #batchTable {
+        width: auto !important;
+    }
+    #batchTable thead th {
+        background-color: white !important;
+        color: black !important;
+        font-weight: bold !important;
+    }
+    /* Frozen column header styling */
+    #batchTable thead th:first-child {
+        background-color: white !important;
+        color: black !important;
+        font-weight: bold !important;
+    }
+    
+    /* Header styling */
+    .table-header {
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    /* Button container styling */
+    #batchTable_wrapper .dt-buttons {
+        margin-bottom: 10px;
+    }
+    
+    /* Scroll body styling */
+    .dataTables_scrollBody {
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+    
+    /* Compact styling */
+    .compact thead th {
+        padding: 4px 8px !important;
+    }
+    
+    /* Center align content */
+    .dt-center {
+        text-align: center;
+    }
+
+    /* Filter Section Styling */
+    #applyFilter {
+        height: 38px;
+        white-space: nowrap;
+    }
+
+
+    /* Filter controls responsive layout */
+    .filter-controls .form-label {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        #applyFilter, #exportCSV {
+            min-width: 100px;
+        }
+    }
+
+    /* Button styling */
+    #applyFilter, #exportCSV {
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    /* Make sure inputs and selects don't overflow */
+    .form-control, .form-select {
+        min-width: 100%;
+    }
+
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .filter-section .col-md-4, 
+        .filter-section .col-md-3 {
+            margin-bottom: 15px;
+        }
+    }
+    
+</style>
+{% endblock %}

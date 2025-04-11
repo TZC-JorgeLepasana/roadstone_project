@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'lib/toastify.min.css' %}">
+<style>
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+        margin: 0 10px;
+    }
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    input:checked + .slider {
+        background-color: #28a745;
+    }
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+    #fetchControls {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div id="fetchControls">
+        <h2 class="mb-0">Energy Data Fetcher</h2>
+        <label class="switch">
+            <input type="checkbox" id="autoFetchToggle">
+            <span class="slider"></span>
+        </label>
+        <span id="toggleLabel">Auto Fetch: OFF</span>
+        <button id="fetchBtn" class="btn btn-primary ml-3">Fetch Now</button>
+    </div>
+    
+    <div class="mt-3">
+        <div class="progress" style="height: 25px;">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                 role="progressbar" style="width: 0%">
+                <span id="progressText">0%</span>
+            </div>
+        </div>
+        <p id="statusText" class="mt-2 text-muted">System ready</p>
+    </div>
+
+    <table class="table mt-4 table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Date</th>
+                <th>Meter Name</th>
+                <th>Total Consumption</th>
+            </tr>
+        </thead>
+        <tbody id="energyDataTable">
+            {% for data in daily_data %}
+            <tr>
+                <td>{{ data.date }}</td>
+                <td>{{ data.meter_name }}</td>
+                <td>{{ data.total_consumption|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script src="{% static 'lib/toastify.min.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fetchBtn = document.getElementById('fetchBtn');
+    const autoToggle = document.getElementById('autoFetchToggle');
+    const toggleLabel = document.getElementById('toggleLabel');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const statusText = document.getElementById('statusText');
+    const energyTable = document.getElementById('energyDataTable');
+    
+    let taskId = null;
+    let autoFetchInterval = null;
+    
+    // WebSocket connection for real-time updates
+    function setupWebSocket(taskID) {
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const wsPath = `${window.location.host}/ws/energy/`;
+    const socket = new WebSocket(`${wsProtocol}${wsPath}`);
+
+
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+            updateUI(data);
+            
+            // Show toast for specific messages
+            if (data.message && data.message.includes("completed")) {
+                showToast(data.message, 'success');
+            }
+        };
+
+    socket.onopen = function() {
+        showToast('Connected to real-time updates', 'info');
+    };
+
+    socket.onerror = function(error) {
+        console.error('WebSocket Error:', error);
+        showToast('Connection error - retrying...', 'error');
+        setTimeout(() => setupWebSocket(taskID), 5000);
+    };
+
+    socket.onclose = function() {
+        console.log('WebSocket Closed');
+        setTimeout(() => setupWebSocket(taskId), 5000);
+    };
+}
+    
+    // Update UI with task progress
+    function updateUI(data) {
+        if (data.progress !== undefined) {
+            const progress = Math.min(100, Math.max(0, data.progress));
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${progress}%`;
+            
+            if (data.message) {
+                statusText.textContent = data.message;
+                // Show toast for important messages
+                if (data.message.includes("Error") || data.message.includes("failed")) {
+                    showToast(data.message, 'error');
+                }
+            }
+            
+            if (progress === 100) {
+                progressBar.classList.remove('progress-bar-animated');
+                fetchLatestData();
+                showToast('Data fetch completed!', 'success');
+            }
+        }
+    }
+    
+    // Fetch latest data after completion
+    async function fetchLatestData() {
+        try {
+            const response = await fetch('/energy/');
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTable = doc.getElementById('energyDataTable');
+            energyTable.innerHTML = newTable.innerHTML;
+        } catch (error) {
+            console.error('Failed to refresh data:', error);
+        }
+    }
+    
+    // Show toast notifications
+    function showToast(message, type = 'info') {
+        const background = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8';
+        Toastify({
+            text: message,
+            duration: 3000,
+            style: { 
+                background: background,
+                color: '#fff',
+                'border-radius': '4px'
+            },
+            className: "toast",
+            stopOnFocus: true
+        }).showToast();
+    }
+    
+    // Handle fetch button click
+    fetchBtn.addEventListener('click', async function() {
+        fetchBtn.disabled = true;
+        progressBar.style.width = '0%';
+        progressText.textContent = '0%';
+        statusText.textContent = 'Starting data fetch...';
+        progressBar.classList.add('progress-bar-animated');
+        showToast('Starting data fetch...', 'info');
+
+        try {
+            const response = await fetch('/trigger-energy-fetch/');
+            const data = await response.json();
+            taskId = data.task_id;
+            setupWebSocket(data.task_id);
+        } catch (error) {
+            showToast('Failed to start fetch', 'error');
+            fetchBtn.disabled = false;
+            progressBar.classList.remove('progress-bar-animated');
+        }
+    });
+    
+    // Handle auto-fetch toggle
+    autoToggle.addEventListener('change', function() {
+        if (this.checked) {
+            toggleLabel.textContent = 'Auto Fetch: ON';
+            autoFetchInterval = setInterval(() => {
+                if (!fetchBtn.disabled) {
+                    fetchBtn.click();
+                }
+            }, 3600000); // Auto-fetch every hour
+        } else {
+            toggleLabel.textContent = 'Auto Fetch: OFF';
+            clearInterval(autoFetchInterval);
+        }
+    });
+    
+    // Initialize WebSocket
+    setupWebSocket();
+});
+</script>
+{% endblock %}

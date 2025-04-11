@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Production Dashboard - Roadstone Ireland{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Left 75% Column -->
+        <div class="col-lg-9">
+            <!-- Row 1: Filter Controls -->
+            <div class="card mb-2">
+                <div class="card-header py-2 px-3 bg-white border-bottom">
+                    <span class="h5 mb-0">Filter Data</span>
+                </div>
+                <div class="card-body p-2">
+                    <div class="d-flex flex-nowrap align-items-end gap-2">
+                        <!-- Date Range -->
+                        <div class="form-group mb-0" style="min-width: 160px;">
+                            <label for="timeRangeSelect" class="small mb-1">Date Range</label>
+                            <select class="form-control form-control-sm" id="timeRangeSelect">
+                                <option value="7" {% if time_range == 7 %}selected{% endif %}>Last 7 Days</option>
+                                <option value="30" {% if time_range == 30 %}selected{% endif %}>Last 30 Days</option>
+                                <option value="90" {% if time_range == 90 %}selected{% endif %}>Last 90 Days</option>
+                                <option value="365" {% if time_range == 365 %}selected{% endif %}>Last Year</option>
+                                <option value="0" {% if time_range == 0 %}selected{% endif %}>All Time</option>
+                            </select>
+                        </div>
+    
+                        <!-- Mix Recipe -->
+                        <div class="form-group mb-0" style="min-width: 180px;">
+                            <label for="recipeSelect" class="small mb-1">Mix Recipe</label>
+                            <select class="form-control form-control-sm" id="recipeSelect">
+                                <option value="">All Recipes</option>
+                                {% for recipe in recipe_names %}
+                                <option value="{{ recipe }}" {% if selected_recipe == recipe %}selected{% endif %}>{{ recipe }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+    
+                        <!-- Unit -->
+                        <div class="form-group mb-0" style="min-width: 160px;">
+                            <label for="unitSelect" class="small mb-1">Unit</label>
+                            <select class="form-control form-control-sm" id="unitSelect">
+                                <option value="t" {% if unit == 't' %}selected{% endif %}>tonnes (t)</option>
+                                <option value="kt" {% if unit == 'kt' %}selected{% endif %}>kilotonne (kt)</option>
+                            </select>
+                        </div>
+    
+                        <!-- Apply Button -->
+                        <div class="form-group mb-0">
+                            <button id="applyFilters" class="btn btn-sm btn-primary mt-3">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Row 2: Current Filters -->
+            <div class="card">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex flex-nowrap justify-content-start align-items-center gap-4 small">
+                        <div><strong>Range:</strong>
+                            {% if time_range == 0 %}All Time{% else %}Last {{ time_range }} Days{% endif %}
+                        </div>
+                        <div><strong>Recipe:</strong>
+                            {{ selected_recipe|default:"All" }}
+                        </div>
+                        <div><strong>Unit:</strong>
+                            {{ unit|upper }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Right 25% Column: Total Production Widget -->
+        <div class="col-lg-3 d-flex flex-column">
+            <div class="small-box flex-fill" style="background: linear-gradient(180deg, #2a41d6, #023e56); 
+            color: white; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.495);">
+                <div class="inner">
+                    <h3 style=" font-weight: bold;">
+                        {{ total_production }}</h3>
+                    <p>Total Production</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-weight-hanging"></i>
+                </div>
+                <div class="small-box-footer" style="height: 70px; display: flex; align-items: center; justify-content: center;">
+                    {{ selected_recipe|default:"All Recipes" }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    
+    <!-- 3rd Row KPI Widgets -->
+    <div class="row gx-2 mt-2">
+        <!-- % RAP - 20% -->
+        <div class="col-lg-2 col-md-6">
+            <div class="small-box" style="background: linear-gradient(180deg, #0aa733, #0f330d); 
+            color: white; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.495);">
+                <div class="inner">
+                    <h3>{{ rap_percentage }}</h3>
+                    <p>% RAP</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-recycle"></i>
+                </div>
+                <div class="small-box-footer">Reclaimed Asphalt</div>
+            </div>
+        </div>
+
+        <!-- % Bitumen - 20% -->
+        <div class="col-lg-2 col-md-6">
+            <div class="small-box mb-2" style="background: linear-gradient(180deg, #fd5f1b, #d92e1f); 
+            color: white; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.495);">
+                <div class="inner">
+                    <h3>{{ bitumen_percentage }}</h3>
+                    <p>% Bitumen</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-oil-can"></i>
+                </div>
+                <div class="small-box-footer">Bitumen Content</div>
+            </div>
+        </div>
+
+        <!-- % Aggregates - 20% -->
+        <div class="col-lg-2 col-md-6">
+            <div class="small-box mb-2" style="background: linear-gradient(180deg, #40027d, #3d0f50); 
+            color: white; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);">
+                <div class="inner">
+                    <h3>{{ aggregates_percentage }}</h3>
+                    <p>% Aggregates</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-cubes"></i>
+                </div>
+                <div class="small-box-footer">Aggregate Content</div>
+            </div>
+        </div>
+
+        <!-- Temperature - 40% -->
+        <div class="col-lg-6 col-md-12">
+            <div class="small-box mb-2" style="background: linear-gradient(180deg, #c1333a, #a65b05, #045565); 
+            color: white; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.495);">
+                <div class="inner">
+                    <div class="row">
+                        <div class="col-6 text-center border-end">
+                            <h4>Target</h4>
+                            <h3>{{ avg_temp_target }}</h3>
+                        </div>
+                        <div class="col-6 text-center">
+                            <h4>Actual</h4>
+                            <h3>{{ avg_temp_actual }}</h3>
+                        </div>
+                    </div>
+                    <div class="text-center mt-2">
+                        <strong>Deviation: {{ temp_deviation }}</strong>
+                    </div>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-thermometer-half"></i>
+                </div>
+                <div class="small-box-footer">Temperature Comparison</div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="row mt-4">
+        <!-- Main Production Chart (full width) -->
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Production Chart 
+                        {{ unit|upper }} of {% if time_range == 0 %}All Time{% else %}Last {{ time_range }} Days{% endif %}</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 400px; width: 100%">
+                        {% if has_data %}
+                            <canvas id="productionChart"></canvas>
+                        {% else %}
+                            <div class="alert alert-warning py-2 px-3 mb-0">
+                                No production data available for the selected filters
+                                <a href="?" class="btn btn-sm btn-primary ml-2">Reset Filters</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    {{ selected_recipe|default:"All Recipes" }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Injection -->
+{{ chart_labels|json_script:"chart-labels" }}
+{{ chart_data|json_script:"chart-data" }}
+{{ unit|json_script:"unit-json" }}
+{{ time_range|json_script:"time-range-json" }}
+{{ selected_recipe|json_script:"selected-recipe-json" }}
+
+<!-- Custom JavaScript -->
+<script src="{% static 'js/production.js' %}?v=1.0"></script>
+{% endblock %}

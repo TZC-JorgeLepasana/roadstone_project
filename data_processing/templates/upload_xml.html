@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}XML File Processing{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'lib/toastify.min.css' %}">
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #2c3e50 0%, #1a1a1a 100%);
+        --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --border-radius: 8px;
+    }
+    
+    body, html {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .container-fluid {
+        height: calc(80vh - 60px); /* Adjust based on your header height */
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .card {
+        border: none;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        background: white;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 0;
+        height: 600px; /* Fixed card height */
+    }
+    
+    .card-header {
+        background: var(--primary-gradient);
+        border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+        padding: 12px 20px;
+        color: white;
+        flex-shrink: 0;
+    }
+    
+    .card-body {
+        padding: 15px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0; /* Important for proper scrolling */
+    }
+    
+    .content-row {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+    }
+    
+    .control-panel, .files-panel {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+    
+    .control-panel {
+        border-right: 1px solid #eee;
+        padding-right: 15px;
+    }
+    
+    .files-panel {
+        padding-left: 15px;
+    }
+    
+    .processed-files-container {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        background: white;
+        border-radius: var(--border-radius);
+        border: 1px solid #e0e0e0;
+        height: 600px;
+    }
+    
+    #processedFilesList {
+        list-style-type: none;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+    
+    #processedFilesList li {
+        padding: 10px 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .content-row {
+            flex-direction: column;
+        }
+        
+        .control-panel {
+            border-right: none;
+            border-bottom: 1px solid #eee;
+            padding-right: 0;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .files-panel {
+            padding-left: 0;
+        }
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h4 class="fw-semibold"><i class="bi bi-file-earmark-zip me-2"></i>XML File Processing</h4>
+        </div>
+        <div class="col-md-6 text-end">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb justify-content-end bg-transparent">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-decoration-none">Home</a></li>
+                    <li class="breadcrumb-item active">XML Processing</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- CSRF Token (Required for AJAX calls) -->
+    {% csrf_token %}
+    <input type="hidden" id="csrf_token" value="{{ csrf_token }}">
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center" >
+            <span>File Processing Controls</span>
+
+        </div>
+
+        <div class="card-body" style="height: 400px;">
+            <div class="row content-row">
+                <!-- Control Panel -->
+                <div class="col-md-6 control-panel">
+                    <div class="mb-3">
+                        <h5><i class="bi bi-gear"></i> Processing Controls</h5>
+                        <div class="btn-toolbar mb-3">
+                            <div class="btn-group me-2">
+                                <button id="startBtn" class="btn btn-success">
+                                    <i class="bi bi-play-circle me-2"></i>Start Parsing
+                                </button>
+                                <button id="pauseBtn" class="btn btn-warning" disabled>
+                                    <i class="bi bi-pause-circle me-2"></i>Pause
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info py-2 mb-3" id="parsingStatus">
+                            <i class="bi bi-info-circle me-2"></i>Status: Ready
+                        </div>
+                    </div>
+
+                    <div class="progress-container">
+                        <div class="row small text-center mb-3">
+                            <div class="col">
+                                <span class="badge bg-primary" id="filesProcessed">0</span> Files
+                            </div>
+                            <div class="col">
+                                <span class="badge bg-success" id="batchesProcessed">0</span> Batches
+                            </div>
+                        </div>
+                        <div class="file-info">
+                            <div id="currentFile" class="fst-italic text-muted small mb-1"></div>
+                            <div id="currentStatus" class="small text-info"></div>
+                        </div>
+                    </div>
+
+                    {% if request.user.is_superuser %}
+                    <div class="schedule-selector mt-4">
+                        <label class="form-label fw-semibold">Schedule Options:</label>
+                        <select id="scheduleSelect" class="form-select">
+                            <option value="">Manual Processing</option>
+                            {% for schedule in active_schedules %}
+                            <option value="{{ schedule.id }}">{{ schedule.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Processed Files List -->
+                <div class="col-md-6 files-panel">
+                    <h5><i class="bi bi-list-check"></i> Processed Files</h5>
+                    <div class="filter-controls mb-3">
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-primary active" data-filter="all">
+                                All <span class="badge bg-dark ms-1">0</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-filter="success">
+                                Success <span class="badge bg-dark ms-1">0</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-filter="error">
+                                Errors <span class="badge bg-dark ms-1">0</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="processed-files-container" style="max-height: 390px; overflow-y: auto;">
+                        <ul id="processedFilesList">
+                            {% for file in processed_files %}
+                            <li class="d-flex justify-content-between align-items-center py-2 
+                                {% if file.status == 'error' %}list-group-item-danger{% elif file.status == 'skipped' %}list-group-item-warning{% endif %}" 
+                                data-status="{{ file.status }}">
+                                <div>
+                                    <span class="badge {% if file.status == 'success' %}bg-success{% elif file.status == 'skipped' %}bg-warning{% else %}bg-danger{% endif %} me-2">
+                                        {% if file.status == 'success' %}<i class="bi bi-check-circle"></i>
+                                        {% elif file.status == 'skipped' %}<i class="bi bi-skip-forward"></i>
+                                        {% else %}<i class="bi bi-exclamation-triangle"></i>{% endif %}
+                                    </span>
+                                    <span class="file-name">{{ file.file_name }}</span>
+                                    {% if file.schedule %}
+                                    <span class="badge bg-info ms-2">{{ file.schedule.name }}</span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ file.export_time|date:"H:i" }}</small>
+                            </li>
+                            {% empty %}
+                            <li class="text-muted">No files processed yet</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Processing Error</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6 id="errorFileName" class="mb-3"></h6>
+                <div class="alert alert-danger">
+                    <pre id="errorDetails" class="mb-0"></pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="retryFileBtn">
+                    <i class="bi bi-arrow-repeat me-2"></i>Retry
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'lib/toastify.min.js' %}"></script>
+<script src="{% static 'js/scripts.js' %}"></script>
+{% endblock %}

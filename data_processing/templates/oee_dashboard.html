@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Production Dashboard - Roadstone Ireland{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Date Range Selector -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Select Date Range</h3>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary date-range-btn" data-days="7">Last 7 Days</button>
+                        <button type="button" class="btn btn-outline-primary date-range-btn active" data-days="30">Last 30 Days</button>
+                        <button type="button" class="btn btn-outline-primary date-range-btn" data-days="90">Last 90 Days</button>
+                        <button type="button" class="btn btn-outline-primary date-range-btn" data-days="365">Last Year</button>
+                        <button type="button" class="btn btn-outline-primary date-range-btn" data-days="0">All Time</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Widgets -->
+    <div class="row">
+        <!-- Total Production -->
+        <div class="col-lg-3 col-md-6">
+            <div class="small-box" style="background: linear-gradient(180deg, #1d928a, #098768); 
+            color: white; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.495);">
+                <div class="inner">
+                    <h4 id="total-production">0</h4>
+                    <p>Production (t)</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-industry"></i>
+                </div>
+                <div class="small-box-footer">Productive Output</div>
+            </div>
+        </div>
+        
+        <!-- Total Emptyout -->
+        <div class="col-lg-3 col-md-6">
+            <div class="small-box" style="background: linear-gradient(180deg, #ff0cef, #330d2c); 
+            color: white; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.495);">
+                <div class="inner">
+                    <h4 id="total-emptyout">0</h4>
+                    <p>Total Emptyout (t)</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-dumpster"></i>
+                </div>
+                <div class="small-box-footer">Non-Productive Output</div>
+            </div>
+        </div>
+        
+        <!-- Electricity Use -->
+        <div class="col-lg-3 col-md-6">
+            <div class="small-box" style="background: linear-gradient(180deg, #cac728, #a3a105, #8b8901); 
+            color: white; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.495);">
+                <div class="inner">
+                    <h4 id="total-electricity">TBC</h4>
+                    <p>Electricity Used (kWh)</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="small-box-footer">Electricity Consumption</div>
+            </div>
+        </div>
+        
+        <!-- Fuel Use -->
+        <div class="col-lg-3 col-md-6">
+            <div class="small-box" style="background: linear-gradient(180deg, #7a3900, #a50f0f, #630606); 
+            color: white; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.495);">
+                <div class="inner">
+                    <h4 id="total-fuel">Not Currently Available</h4>
+                    <p>Fuel Consumption</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-gas-pump"></i>
+                </div>
+                <div class="small-box-footer">Data Source Not Available</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart and Table Section -->
+    <div class="row mt-4">
+        <!-- Runtime Distribution Chart (75% width) -->
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Plant Runtime Distribution (HH:MM:SS)</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="runtimeChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    Data from PlantRunTime (all numeric fields except id and date)
+                </div>
+            </div>
+        </div>
+        
+        <!-- Drying Efficiency Table (25% width) -->
+        <div class="col-lg-3">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Drying Efficiency</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0 table-container">
+                    <table class="table table-bordered table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Metric</th>
+                                <th class="text-right">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Avg Drying (t/hr)</td>
+                                <td class="text-right" id="avg-drying">0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Total Materials (t)</td>
+                                <td class="text-right" id="total-materials">0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Total RAP (t)</td>
+                                <td class="text-right" id="total-rap">0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Total Bitumen (t)</td>
+                                <td class="text-right" id="total-bitumen">0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Total Mixer (hrs)</td>
+                                <td class="text-right" id="total-mixer-hours">0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer">
+                    Formula: (Total Materials - RAP - Bitumen) / Mixer Hours
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/oee.js' %}?v=1.0"></script>
+{% endblock %}
