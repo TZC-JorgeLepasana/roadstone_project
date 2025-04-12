@@ -33,7 +33,7 @@ CSRF_COOKIE_SECURE = False
 
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Comment out muna
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -123,9 +123,9 @@ WSGI_APPLICATION = 'roadstone_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Roadstone_Galway',
-        'USER': 'roadstone_user',
-        'PASSWORD': 'TZC_roadstone_galway', 
+        'NAME': 'Roadstone_Asphalt',
+        'USER': 'postgres', #'roadstone_user',
+        'PASSWORD': 'TZCdb123!!*&', #'TZC_roadstone_galway', 
         'HOST': 'localhost',
         'PORT': '5432',
     }
