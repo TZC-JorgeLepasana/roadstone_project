@@ -251,7 +251,7 @@ def operator_home(request):
         )
     )
     total_production = production_aggregate['total_combined']
-    formatted_total_production = "{:,.2f}".format(total_production)
+    formatted_total_production = "{:,.2f} t".format(total_production)
 
     # Calculate Electricity Consumption
     electricity_aggregate = energy_data.aggregate(
@@ -269,7 +269,7 @@ def operator_home(request):
         total=Coalesce(Sum('Quantity'), 0.0, output_field=FloatField())
     )
     rap_consumption = rap_aggregate['total']
-    formatted_rap_consumption = "{:,.2f}".format(rap_consumption)
+    formatted_rap_consumption = "{:,.2f} t".format(rap_consumption)
 
     # Fetch Material Consumption Data
     material_query = Q()
