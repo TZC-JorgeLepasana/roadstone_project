@@ -34,7 +34,7 @@ class ParsingProgressConsumer(AsyncWebsocketConsumer):
             'progress': event['progress']
         }))
 
-class EnergyDataConsumer(AsyncJsonWebsocketConsumer):
+class EnergyConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.task_id = self.scope['url_route']['kwargs']['task_id']
         await self.channel_layer.group_add(
@@ -43,9 +43,11 @@ class EnergyDataConsumer(AsyncJsonWebsocketConsumer):
         )
         await self.accept()
 
-    async def receive(self, text_data):
-        # Handle incoming messages if needed
-        pass
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(
+            f"energy_{self.task_id}",
+            self.channel_name
+        )
 
     async def task_update(self, event):
-        await self.send_json(event['data'])
+        await self.send(text_data=json.dumps(event))
