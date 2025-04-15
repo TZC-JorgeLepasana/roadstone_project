@@ -81,9 +81,6 @@ def manager_home(request):
     time_range = 30
     labels = []
     values = []
-    operational_hours = 0
-    utilization_rate = 0
-    total_available_hours = 12
     total_production = 0
     rap_consumption = 0
     electricity_consumption = 0
@@ -92,110 +89,96 @@ def manager_home(request):
     # Get time range from request
     if 'time_range' in request.GET:
         try:
-            time_range = int(request.GET['time_range'])
+            time_range = int(request.GET.get('time_range'))
         except (ValueError, TypeError):
             pass
 
-    # Filter BatchLog data based on time range
+    # Standardized date filtering
+    end_date = timezone.now().date()
     if time_range > 0:
-        cutoff_date = timezone.now() - timedelta(days=time_range)
-        batchlogs = BatchLog.objects.filter(Time__gte=cutoff_date)
-        energy_data = EnergyData.objects.filter(date__gte=cutoff_date.date())
+        start_date = end_date - timedelta(days=time_range)
+        date_filter = Q(date__gte=start_date) & Q(date__lte=end_date)
+        material_cutoff = start_date
     else:
-        batchlogs = BatchLog.objects.all()
-        energy_data = EnergyData.objects.all()
+        date_filter = Q()  # All time
+        material_cutoff = None
+
+    # Filter data based on time range
+    oee_data = OEEDailyData.objects.filter(date_filter)
+    energy_data = EnergyData.objects.filter(date_filter)
+
+    # Standardized total production calculation
+    production_aggregate = oee_data.aggregate(
+        total_combined=Coalesce(
+            Sum(F('TotalProduction') + F('TotalEmptyOut')),
+            0.0,
+            output_field=FloatField()
+        )
+    )
+    total_production = production_aggregate['total_combined']
+    formatted_total_production = "{:,.2f} t".format(total_production)
 
     # Calculate Electricity Consumption
     electricity_aggregate = energy_data.aggregate(
-        total=Sum('consumption', output_field=FloatField())
+        total=Coalesce(Sum('consumption'), 0.0, output_field=FloatField())
     )
-    electricity_consumption = electricity_aggregate.get('total') or 0
+    electricity_consumption = electricity_aggregate['total']
     formatted_electricity = "{:,.2f} kWh".format(electricity_consumption)
 
-    # Calculate Total Production
-    hotbin_fields = [
-        'HotBin1_Actual', 'HotBin2_Actual', 'HotBin3_Actual',
-        'HotBin4_Actual', 'HotBin5_Actual', 'HotBin6_Actual',
-        'HotBin7_Actual', 'HotBin8_Actual'
-    ]
-    aggregates = batchlogs.aggregate(
-        **{field: Sum(field, output_field=FloatField()) for field in hotbin_fields}
-    )
-    total_production = sum(
-        value if value is not None else 0 for value in aggregates.values()
-    )
-    formatted_total_production = "{:,.2f}".format(total_production)
-
     # Calculate RAP Consumption
-    rap_aggregate = batchlogs.aggregate(
-        total=Sum('Reclaim_Actual', output_field=FloatField())
+    rap_query = Q(MaterialName='Reclaim Asphalt')
+    if material_cutoff:
+        rap_query &= Q(date__gte=material_cutoff)
+    
+    rap_aggregate = DailyMaterials.objects.filter(rap_query).aggregate(
+        total=Coalesce(Sum('Quantity'), 0.0, output_field=FloatField())
     )
-    rap_consumption = rap_aggregate.get('total') or 0
-    formatted_rap_consumption = "{:,.2f}".format(rap_consumption)
+    rap_consumption = rap_aggregate['total']
+    formatted_rap_consumption = "{:,.2f} t".format(rap_consumption)
+
 
     # Fetch Material Consumption Data
-    if time_range > 0:
-        material_cutoff = cutoff_date.date()  # Use date part for DailyMaterials
-        materials = DailyMaterials.objects.filter(date__gte=material_cutoff)
-    else:
-        materials = DailyMaterials.objects.all()
+    material_query = Q()
+    if material_cutoff:
+        material_query = Q(date__gte=material_cutoff)
+        
+    materials = DailyMaterials.objects.filter(material_query) \
+        .exclude(MaterialName__isnull=True) \
+        .exclude(MaterialName__exact='') \
+        .exclude(MaterialName__iexact='undefined') \
+        .values('MaterialName') \
+        .annotate(total_quantity=Sum('Quantity')) \
+        .order_by('MaterialName')
 
-    materials = materials.order_by('-date')
+    material_data = []
+    for index, material in enumerate(materials, start=1):
+        # Clean the material name
+        material_name = material['MaterialName'].strip() if material['MaterialName'] else 'Other Material'
+        
+        # Only include if name is valid
+        if material_name and material_name.lower() not in ['null', 'undefined', '']:
+            material_data.append({
+                'index': index,
+                'MaterialName': material_name,
+                'Quantity': "{:,.2f}".format(material['total_quantity']) if material['total_quantity'] is not None else "0.00"
+            })
 
-    material_data = [] #This is the data for the material table on dashboard
-    for material in materials:
-        date_str = material.date.strftime('%Y-%m-%d') if material.date else 'Unknown Date'
-        material_name = material.MaterialName or 'Unknown'
-        quantity = material.Quantity if material.Quantity is not None else 0
-        formatted_quantity = "{:,.2f}".format(quantity)
-        # For each material type in date range, sum consumption
-        material_data.append({
-            'date': date_str, #Remove Date - just show total for the period
-            'MaterialName': material_name,
-            'Quantity': formatted_quantity
-        })
-
-    # Prepare BatchLog data for chart
-    batchlogs = batchlogs.annotate(
-        total_tonnage=ExpressionWrapper(
-            Coalesce(F('HotBin1_Actual'), 0) + 
-            Coalesce(F('HotBin2_Actual'), 0) + 
-            Coalesce(F('HotBin3_Actual'), 0) +
-            Coalesce(F('HotBin4_Actual'), 0) + 
-            Coalesce(F('HotBin5_Actual'), 0) + 
-            Coalesce(F('HotBin6_Actual'), 0) +
-            Coalesce(F('HotBin7_Actual'), 0) +
-            Coalesce(F('HotBin8_Actual'), 0),
-            output_field=DecimalField()
+    # Prepare OEE data for chart
+    chart_data = oee_data.annotate(
+        daily_production=ExpressionWrapper(
+            F('TotalProduction') + F('TotalEmptyOut'),
+            output_field=FloatField()
         )
-    ).values('Time', 'total_tonnage').order_by('Time')
+    ).values('date', 'daily_production').order_by('date')
 
     # Prepare chart data
-    if batchlogs.exists():
-        labels = [log['Time'].strftime('%Y-%m-%d %H:%M:%S') for log in batchlogs]
-        values = [float(log['total_tonnage']) for log in batchlogs]
-
-        previous_time = None
-        for log in batchlogs:
-            current_time = log['Time']
-            if previous_time:
-                time_diff = (current_time - previous_time).total_seconds() / 3600
-                operational_hours += time_diff
-            previous_time = current_time
-
-        if total_available_hours > 0:
-            utilization_rate = (operational_hours / total_available_hours) * 100
-
-    utilization_data = {
-        'operational_hours': operational_hours,
-        'idle_hours': total_available_hours - operational_hours,
-        'utilization_rate': utilization_rate
-    }
+    if chart_data.exists():
+        labels = [entry['date'].strftime('%Y-%m-%d') for entry in chart_data]
+        values = [float(entry['daily_production']) for entry in chart_data]
 
     return render(request, 'manager_home.html', {
         'labels': json.dumps(labels),
         'values': json.dumps(values),
-        'utilization_data': json.dumps(utilization_data),
         'time_range': time_range,
         'total_production': formatted_total_production,
         'rap_consumption': formatted_rap_consumption,
@@ -271,21 +254,32 @@ def operator_home(request):
     rap_consumption = rap_aggregate['total']
     formatted_rap_consumption = "{:,.2f} t".format(rap_consumption)
 
+
     # Fetch Material Consumption Data
     material_query = Q()
     if material_cutoff:
         material_query = Q(date__gte=material_cutoff)
-    
-    materials = DailyMaterials.objects.filter(material_query).order_by('-date')
+        
+    materials = DailyMaterials.objects.filter(material_query) \
+        .exclude(MaterialName__isnull=True) \
+        .exclude(MaterialName__exact='') \
+        .exclude(MaterialName__iexact='undefined') \
+        .values('MaterialName') \
+        .annotate(total_quantity=Sum('Quantity')) \
+        .order_by('MaterialName')
 
     material_data = []
-    for material in materials:
-        date_str = material.date.strftime('%Y-%m-%d') if material.date else 'Unknown Date'
-        material_data.append({
-            'date': date_str,
-            'MaterialName': material.MaterialName or 'Unknown',
-            'Quantity': "{:,.2f}".format(material.Quantity) if material.Quantity is not None else "0.00"
-        })
+    for index, material in enumerate(materials, start=1):
+        # Clean the material name
+        material_name = material['MaterialName'].strip() if material['MaterialName'] else 'Other Material'
+        
+        # Only include if name is valid
+        if material_name and material_name.lower() not in ['null', 'undefined', '']:
+            material_data.append({
+                'index': index,
+                'MaterialName': material_name,
+                'Quantity': "{:,.2f}".format(material['total_quantity']) if material['total_quantity'] is not None else "0.00"
+            })
 
     # Prepare OEE data for chart
     chart_data = oee_data.annotate(
@@ -469,9 +463,16 @@ def production_dashboard(request):
     )
 
     # Get RAP consumption from DailyMaterials
-    rap_metrics = rap_materials.aggregate(
-        total_reclaim=Coalesce(Sum('Quantity', output_field=FloatField()), 0.0)
-    )
+    if selected_recipe:
+        # Calculate RAP from BatchLog's Reclaim_Actual for the selected recipe
+        rap_metrics = batch_logs.aggregate(
+            total_reclaim=Coalesce(Sum('Reclaim_Actual', output_field=FloatField()), Value(0.0, output_field=FloatField())
+        ))
+    else:
+        # Calculate RAP from DailyMaterials
+        rap_metrics = rap_materials.aggregate(
+            total_reclaim=Coalesce(Sum('Quantity', output_field=FloatField()), Value(0.0, output_field=FloatField())
+        ))
 
     bitumen_metrics = batch_logs.aggregate(
         total_bitumen=Coalesce(Sum('Bitumen_Actual', output_field=FloatField()), 0.0)
@@ -484,14 +485,29 @@ def production_dashboard(request):
 
     # Convert values based on selected unit
     conversion_factor = 1000 if unit == 'kt' else 1
-    total_prod = float(production_metrics['total_production']) / conversion_factor
-    total_reclaim = float(rap_metrics['total_reclaim']) / conversion_factor
-    total_bitumen = float(bitumen_metrics['total_bitumen']) / 1000 / conversion_factor  # Convert from kg to tons
+    production_total = float(production_metrics['total_production'])
+    total_prod = production_total / conversion_factor
+
+    # Calculate RAP in tons and apply conversion factor
+    if selected_recipe:
+        rap_total = float(rap_metrics['total_reclaim']) / 1000  # Convert kg to tons
+    else:
+        rap_total = float(rap_metrics['total_reclaim'])  # Already in tons
+    total_reclaim = rap_total / conversion_factor
+
+    # Bitumen conversion (kg to tons)
+    bitumen_total = float(bitumen_metrics['total_bitumen']) / 1000  # Convert kg to tons
+    total_bitumen = bitumen_total / conversion_factor
     
     # Calculate percentages - now using RAP from DailyMaterials
-    rap_percent = (float(rap_metrics['total_reclaim']) / float(production_metrics['total_production']) * 100) if float(production_metrics['total_production']) > 0 else 0
-    bitumen_percent = (float(bitumen_metrics['total_bitumen']) / 1000 / float(production_metrics['total_production']) * 100) if float(production_metrics['total_production']) > 0 else 0
-    aggregates_percent = (100 - rap_percent - bitumen_percent) if float(production_metrics['total_production']) > 0 else 0
+    if production_total > 0:
+        rap_percent = (rap_total / production_total) * 100
+        bitumen_percent = (bitumen_total / production_total) * 100
+        aggregates_percent = 100 - rap_percent - bitumen_percent
+    else:
+        rap_percent = 0.0
+        bitumen_percent = 0.0
+        aggregates_percent = 0.0
 
     # Temperature metrics
     avg_temp_target = float(temp_metrics['avg_temp_target'])
@@ -831,22 +847,17 @@ def trigger_energy_fetch(request):
 
 @login_required
 def fetch_energy_data_page(request):
+    """Combined view for energy data"""
     daily_data = EnergyData.objects.values('date', 'meter_name').annotate(
         total_consumption=Sum('consumption')
     ).order_by('-date')
     
-    return render(request, 'fetch_energy_data.html', {
-        'daily_data': daily_data
-    })
-
-@login_required
-def fetch_energy_data_page(request):
-    """Render the fetching page"""
     latest_data = EnergyData.objects.order_by('-timestamp')[:50]
+    
     return render(request, 'fetch_energy_data.html', {
-        'energy_data': latest_data
+        'daily_data': daily_data,
+        'latest_data': latest_data
     })
-
 
 
 @login_required
