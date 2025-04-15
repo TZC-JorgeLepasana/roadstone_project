@@ -281,21 +281,51 @@
 
     }
 
+    // scripts.js (updated initializeMaterialTable function)
+    // scripts.js (updated table initialization)
     function initializeMaterialTable() {
-        const materialData = JSON.parse(document.getElementById('material-data').textContent);
-        const tbody = document.getElementById('materialTableBody');
-        
-        materialData.forEach(item => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${item.date}</td>
-                <td>${item.MaterialName}</td>
-                <td class="text-end">${item.Quantity}</td>
-            `;
-            tbody.appendChild(row);
-        });
+        const materialDataElement = document.getElementById('material-data');
+        if (!materialDataElement || !materialDataElement.textContent) return;
+    
+        try {
+            const rawData = JSON.parse(materialDataElement.textContent);
+            const tbody = document.getElementById('materialTableBody');
+            
+            // Clear existing rows
+            tbody.innerHTML = '';
+            
+            // Filter and clean data
+            const cleanData = rawData.filter(item => 
+                item.MaterialName && 
+                item.MaterialName.trim() && 
+                !item.MaterialName.toLowerCase().includes('undefined')
+            );
+            
+            // Create new rows with numbering
+            cleanData.forEach((item, index) => {
+                const row = document.createElement('tr');
+                
+                // Ensure proper values
+                const materialName = item.MaterialName.trim() || 'Other Material';
+                const quantity = item.Quantity !== undefined 
+                    ? item.Quantity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+                    : '0.00';
+                
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${materialName}</td>
+                    <td class="text-end">${quantity} </td>
+                `;
+                tbody.appendChild(row);
+            });
+    
+        } catch (error) {
+            console.error('Error initializing material table:', error);
+            // Fallback empty row if there's an error
+            const tbody = document.getElementById('materialTableBody');
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center">No material data available</td></tr>';
+        }
     }
-
     // Initialize new features when DOM loads
     document.addEventListener('DOMContentLoaded', () => {
         updateWidgets();
@@ -495,12 +525,10 @@
             // Counters
             let successCount = 0;
             let errorCount = 0;
-            let totalBatches = 0;
 
             files.forEach(file => {
                 if (file.status === 'success') successCount++;
                 if (file.status === 'error') errorCount++;
-                if (file.batches) totalBatches += file.batches;
                 
                 const li = document.createElement('li');
                 li.className = `list-group-item d-flex justify-content-between align-items-center py-2 
@@ -526,7 +554,7 @@
 
             // Update counters in the UI
             document.getElementById('filesProcessed').textContent = files.length;
-            document.getElementById('batchesProcessed').textContent = totalBatches;
+
             
             // Update filter buttons
             updateFilterButtons(successCount, errorCount, files.length);
