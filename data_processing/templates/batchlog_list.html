@@ -426,6 +426,7 @@ $(document).ready(function() {
     #applyFilter {
         height: 38px;
         white-space: nowrap;
+        font-size: small;
     }
 
 
@@ -449,7 +450,9 @@ $(document).ready(function() {
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
+        font-size: smaller;
     }
+    
 
     /* Make sure inputs and selects don't overflow */
     .form-control, .form-select {
@@ -462,6 +465,36 @@ $(document).ready(function() {
         .filter-section .col-md-4, 
         .filter-section .col-md-3 {
             margin-bottom: 15px;
+        }
+    }
+
+    /* Add to existing styles */
+    .filter-controls .btn {
+        min-width: 120px;
+        flex-shrink: 1;
+    }
+
+    @media (max-width: 1400px) {
+        .filter-controls .btn {
+            min-width: 100px;
+            font-size: 14px;
+        }
+        .filter-controls .btn i {
+            display: none;
+        }
+    }
+
+    @media (max-width: 1200px) {
+        .filter-controls .btn {
+            min-width: 90px;
+            padding: 8px 12px;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .filter-controls .btn {
+            min-width: auto;
+            flex-grow: 1;
         }
     }
     
