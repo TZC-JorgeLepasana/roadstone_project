@@ -909,3 +909,26 @@ def fetch_energy_data(self):
         )
         
         self.retry(exc=e, countdown=120)
+
+    # In the while loop of fetch_energy_data task:
+    if total_days == 0:
+        progress = 100  # Handle instant completion
+    else:
+        days_processed = (chunk_end.date() - start_date.date()).days + 1
+        progress = min(100, int((days_processed / total_days * 100)))
+
+    # Add error handling for progress updates
+    try:
+        async_to_sync(get_channel_layer().group_send)(
+            f"energy_{self.request.id}",
+            {
+                "type": "task.update",
+                "data": {
+                    "progress": progress,
+                    "message": f"Processed {format_api_date(current_date)}",
+                    "records_added": records_added
+                }
+            }
+        )
+    except Exception as e:
+        logger.error(f"WebSocket send error: {str(e)}")
