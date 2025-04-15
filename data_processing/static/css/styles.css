@@ -225,6 +225,15 @@ body {
     }
 }
 
+
+#materialTableBody tr td:first-child {
+    text-align: center;
+    color: #666;
+}
+#materialTableBody tr td:last-child {
+    font-family: 'Courier New', monospace;
+}
+
 /* ==================== */
 /* MOBILE RESPONSIVENESS */
 /* ==================== */
