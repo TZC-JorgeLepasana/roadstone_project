@@ -1,5 +1,5 @@
 from django.apps import AppConfig
-import os  # Add this import at the top
+import os  
 
 class DataProcessingConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
